@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Web Terminal Manager</title>
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+        />
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
+        />
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css"
+        />
+        <link rel="stylesheet" href="/static/styles.css" />
+    </head>
+    <body class="bg-dark text-light overflow-hidden vh-100">
+        <div class="d-flex w-100 h-100">
+            <div
+                class="w-50 h-100 d-flex flex-column border-end border-secondary"
+            >
+                <div
+                    class="panel-header d-flex align-items-end border-bottom border-secondary bg-dark pt-2 px-2"
+                >
+                    <button
+                        class="btn btn-sm btn-outline-light mb-2 me-2"
+                        id="addTabButton"
+                    >
+                        <i class="bi bi-plus-lg"></i>
+                    </button>
+                    <ul
+                        class="nav nav-tabs flex-nowrap overflow-x-auto overflow-y-hidden w-100 border-0"
+                        id="tabs-container"
+                    ></ul>
+                </div>
+                <div
+                    class="flex-grow-1 position-relative"
+                    id="terminals-container"
+                ></div>
+            </div>
+
+            <div class="w-50 h-100 d-flex flex-column bg-dark">
+                <div
+                    class="panel-header d-flex align-items-center p-2 border-bottom border-secondary gap-2"
+                >
+                    <button class="btn btn-sm btn-outline-light" id="btn-back">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <button
+                        class="btn btn-sm btn-outline-light"
+                        id="btn-forward"
+                    >
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                    <span
+                        class="font-monospace flex-grow-1 px-2 text-truncate"
+                        id="current-path-display"
+                        >/</span
+                    >
+
+                    <div class="dropdown">
+                        <button
+                            class="btn btn-sm btn-outline-light dropdown-toggle"
+                            type="button"
+                            data-bs-toggle="dropdown"
+                        >
+                            Upload
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-dark px-2">
+                            <li class="mb-2">
+                                <button
+                                    class="dropdown-item"
+                                    id="file-upload-item"
+                                >
+                                    File
+                                </button>
+                            </li>
+                            <li>
+                                <button
+                                    class="dropdown-item"
+                                    id="folder-upload-item"
+                                >
+                                    Folder
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    <button
+                        class="btn btn-sm btn-outline-light"
+                        id="create-file-btn"
+                    >
+                        <i class="bi bi-plus-lg"></i>
+                    </button>
+
+                    <input
+                        type="file"
+                        id="file-upload-input"
+                        class="d-none"
+                        multiple
+                    />
+                    <input
+                        type="file"
+                        id="folder-upload-input"
+                        class="d-none"
+                        webkitdirectory
+                    />
+                </div>
+
+                <div class="flex-grow-1 overflow-auto p-2">
+                    <ul
+                        class="list-group list-group-flush font-monospace"
+                        id="file-list"
+                    ></ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="toast-container position-fixed bottom-0 end-0 p-3">
+            <div
+                id="status-toast"
+                class="toast align-items-center text-bg-secondary border-0"
+                role="alert"
+                aria-live="assertive"
+                aria-atomic="true"
+                data-bs-delay="3000"
+            >
+                <div class="d-flex">
+                    <div class="toast-body" id="toast-message"></div>
+                    <button
+                        type="button"
+                        class="btn-close btn-close-white me-2 m-auto"
+                        data-bs-dismiss="toast"
+                        aria-label="Close"
+                    ></button>
+                </div>
+            </div>
+        </div>
+
+        <div
+            class="modal fade"
+            id="confirm-close-modal"
+            data-bs-backdrop="static"
+            data-bs-keyboard="false"
+            tabindex="-1"
+            aria-hidden="true"
+        >
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content text-bg-dark border-secondary">
+                    <div
+                        class="modal-header border-secondary border-bottom-0 pb-0"
+                    >
+                        <h5 class="modal-title">
+                            <i
+                                class="bi bi-exclamation-triangle text-warning me-2"
+                            ></i
+                            >Close Terminal
+                        </h5>
+                        <button
+                            type="button"
+                            class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"
+                        ></button>
+                    </div>
+                    <div class="modal-body">
+                        <p id="confirm-close-text" class="mb-0"></p>
+                    </div>
+                    <div
+                        class="modal-footer border-secondary border-top-0 pt-0"
+                    >
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-outline-light"
+                            data-bs-dismiss="modal"
+                        >
+                            Keep terminal open
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-danger"
+                            id="confirm-close-btn"
+                        >
+                            Close terminal
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+        <script src="/static/index.js"></script>
+    </body>
+</html>

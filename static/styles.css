@@ -1,0 +1,94 @@
+#tabs-container::-webkit-scrollbar {
+    height: 6px;
+}
+
+#tabs-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#tabs-container::-webkit-scrollbar-thumb {
+    background-color: #6c757d;
+    border-radius: 4px;
+}
+
+#tabs-container {
+    /* For Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: #6c757d transparent;
+}
+.nav-tabs .nav-link {
+    color: #aaa;
+    border-color: #444;
+    padding: 0.25rem 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.nav-tabs .nav-link.active {
+    background-color: #212529;
+    color: #fff;
+    border-color: #6c757d #6c757d #212529;
+}
+.nav-tabs .nav-link input {
+    background: transparent;
+    color: inherit;
+    border: none;
+    outline: none;
+    width: 80px;
+}
+.terminal-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 1px;
+    padding: 2px;
+    visibility: hidden;
+}
+.terminal-wrapper.active {
+    visibility: visible;
+}
+
+.border-light-semitransparent {
+    border-color: #f8f9fa;
+    opacity: 0.75;
+}
+
+.modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.modal-backdrop.show {
+    opacity: 1;
+}
+.file-item {
+    cursor: pointer;
+    background-color: transparent;
+    color: #ccc;
+    border-color: #515151;
+}
+.file-item:hover {
+    background-color: #515151;
+    color: #fff;
+}
+.file-actions {
+    opacity: 0;
+    /* transition: opacity 0.2s; */
+}
+.file-item:hover .file-actions {
+    opacity: 1;
+}
+.file-name-input {
+    background: #444;
+    color: #fff;
+    border: 1px solid #666;
+    outline: none;
+    padding: 0 4px;
+}
+
+.panel-header {
+    height: 55px;
+    flex-shrink: 0;
+}
