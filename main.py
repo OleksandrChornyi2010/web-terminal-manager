@@ -11,6 +11,7 @@ import termios
 import struct
 import uuid
 from pathlib import Path
+from dotenv import load_dotenv
 from typing import List, Optional
 from fastapi import FastAPI, WebSocket, UploadFile, File, BackgroundTasks, Form, HTTPException, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, FileResponse
@@ -18,8 +19,12 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import uvicorn
 
+load_dotenv()
+FILEBROWSER_ONLY_MODE = os.getenv("FILEBROWSER_ONLY_MODE", "false") == "true"
+
 app = FastAPI()
 ROOT_DIR = Path(".").resolve()
+PS1 = r"[\u@ \W]\$ "
 
 tasks_state = {}
 terminals = {}
@@ -86,10 +91,14 @@ def cleanup_terminal(term_id: str):
 
 
 def create_terminal(name: str):
+    if FILEBROWSER_ONLY_MODE:
+        raise HTTPException(
+            status_code=403, detail="Terminals are disabled in this mode")
+
     term_id = str(uuid.uuid4())
     master, slave = pty.openpty()
     env = os.environ.copy()
-    env["PS1"] = r"[\u@ \W]\$ "
+    env.setdefault("PS1", PS1)
     env["TERM"] = "xterm-256color"
     env["COLUMNS"] = "120"
     env["LINES"] = "30"
@@ -237,6 +246,10 @@ async def download_file(path: str, name: str, task_id: Optional[str] = None):
 
 @app.websocket("/ws/terminal/{term_id}")
 async def terminal_socket(websocket: WebSocket, term_id: str):
+    if FILEBROWSER_ONLY_MODE:
+        await websocket.close()
+        return
+
     await websocket.accept()
     term: TerminalSession = terminals.get(term_id)
 
@@ -296,6 +309,13 @@ async def api_rename_terminal(term_id: str, data: RenameTerminalModel):
     terminals[term_id].name = data.name
 
     return {"status": "ok", "new_name": data.name}
+
+
+@app.get("/api/config")
+async def get_config():
+    return {
+        "filebrowser_only": FILEBROWSER_ONLY_MODE
+    }
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

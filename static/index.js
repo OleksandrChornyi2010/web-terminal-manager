@@ -6,6 +6,9 @@ currentPath = "/"
 historyBack = []
 historyForward = []
 
+const terminalsTab = document.getElementById("terminals-tab")
+const filebrowserTab = document.getElementById("filebrowser-tab")
+
 const btnBack = document.getElementById("btn-back")
 const btnForward = document.getElementById("btn-forward")
 const currentPathText = document.getElementById("current-path-display")
@@ -14,33 +17,16 @@ const folderInput = document.getElementById("folder-upload-input")
 
 async function init() {
     assignEvents()
-    loadFiles()
-    window.addEventListener("resize", () => {
-        if (activeTabId && tabs[activeTabId]) {
-            tabs[activeTabId].fitAddon.fit()
-        }
-    })
+    const configRes = await fetch("/api/config")
+    const config = await configRes.json()
 
-    try {
-        const res = await fetch("/api/terminals")
-        if (!res.ok) {
-            throw new Error(`Server returned status: ${res.status}`)
-        }
-        const activeTerminals = await res.json()
-
-        if (activeTerminals.length > 0) {
-            tabCounter = activeTerminals.length + 1
-            for (const t of activeTerminals) {
-                await addTab(t.id, t.name)
-            }
-        } else {
-            await addTab()
-        }
-    } catch (err) {
-        console.error("Failed to load active terminals:", err)
-        showToast("Error connecting to server")
-        await addTab()
+    if (config.filebrowser_only) {
+        terminalsTab.classList.remove("d-flex")
+        terminalsTab.classList.add("d-none")
+    } else {
+        await getTerminals()
     }
+    loadFiles()
 }
 
 function assignEvents() {
@@ -63,6 +49,34 @@ function assignEvents() {
     document
         .getElementById("folder-upload-item")
         .addEventListener("click", () => folderInput.click())
+}
+
+async function getTerminals() {
+    window.addEventListener("resize", () => {
+        if (activeTabId && tabs[activeTabId]) {
+            tabs[activeTabId].fitAddon.fit()
+        }
+    })
+    try {
+        const res = await fetch("/api/terminals")
+        if (!res.ok) {
+            throw new Error(`Server returned status: ${res.status}`)
+        }
+        const activeTerminals = await res.json()
+
+        if (activeTerminals.length > 0) {
+            tabCounter = activeTerminals.length + 1
+            for (const t of activeTerminals) {
+                await addTab(t.id, t.name)
+            }
+        } else {
+            await addTab()
+        }
+    } catch (err) {
+        console.error("Failed to load active terminals:", err)
+        showToast("Error connecting to server")
+        await addTab()
+    }
 }
 
 function showToast(msg) {
