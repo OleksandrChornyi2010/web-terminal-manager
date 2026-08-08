@@ -156,6 +156,28 @@ async function addTab(existingId = null, existingName = null) {
     term.loadAddon(fitAddon)
     term.open(termWrapper)
 
+    term.attachCustomKeyEventHandler((e) => {
+        // Intercept Ctrl + Shift + C
+        if (e.ctrlKey && e.shiftKey && e.code === "KeyC") {
+            if (e.type === "keydown") {
+                e.preventDefault()
+                const selection = term.getSelection()
+                if (selection) {
+                    navigator.clipboard
+                        .writeText(selection)
+                        .then(() => {
+                            showToast("Copied to clipboard")
+                        })
+                        .catch((err) => {
+                            console.error("Failed to copy text:", err)
+                        })
+                }
+            }
+            return false // Tell xterm.js the event is handled
+        }
+        return true
+    })
+
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:"
     const ws = new WebSocket(
         `${protocol}//${window.location.host}/ws/terminal/${id}`,

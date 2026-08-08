@@ -1,19 +1,21 @@
 import os
-import pty
+import struct
 import asyncio
 import subprocess
 import shutil
 import zipfile
-import signal
+import secrets
 import json
-import fcntl
-import termios
-import struct
+import base64
 import uuid
+import pty
+import termios
+import fcntl
+import signal
 from pathlib import Path
 from dotenv import load_dotenv
 from typing import List, Optional
-from fastapi import FastAPI, WebSocket, UploadFile, File, BackgroundTasks, Form, HTTPException, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, UploadFile, File, BackgroundTasks, Form, HTTPException, WebSocketDisconnect, Depends, status, Request
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -21,9 +23,50 @@ import uvicorn
 
 load_dotenv()
 FILEBROWSER_ONLY_MODE = os.getenv("FILEBROWSER_ONLY_MODE", "false") == "true"
+ROOT_DIR = Path(os.getenv("ROOT_DIR")).resolve()
+AUTH_USERNAME = os.getenv("AUTH_USERNAME")
+AUTH_PASSWORD = os.getenv("AUTH_PASSWORD")
 
-app = FastAPI()
-ROOT_DIR = Path(".").resolve()
+
+def verify_auth(request: Request = None, websocket: WebSocket = None):
+    if not AUTH_USERNAME or not AUTH_PASSWORD:
+        return True
+
+    conn = request if request else websocket
+    auth_header = conn.headers.get("Authorization")
+
+    is_valid = False
+
+    if auth_header and auth_header.startswith("Basic "):
+        try:
+            decoded = base64.b64decode(auth_header[6:]).decode("utf8")
+            username, _, password = decoded.partition(":")
+
+            is_correct_username = secrets.compare_digest(
+                username.encode("utf8"), AUTH_USERNAME.encode("utf8"))
+            is_correct_password = secrets.compare_digest(
+                password.encode("utf8"), AUTH_PASSWORD.encode("utf8"))
+
+            if is_correct_username and is_correct_password:
+                is_valid = True
+        except Exception:
+            pass
+
+    if not is_valid:
+        if websocket:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Not authenticated")
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect credentials",
+                headers={"WWW-Authenticate": "Basic"},
+            )
+
+    return True
+
+
+app = FastAPI(dependencies=[Depends(verify_auth)])
 PS1 = r"[\u@ \W]\$ "
 
 tasks_state = {}
