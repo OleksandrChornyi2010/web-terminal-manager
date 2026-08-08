@@ -16,6 +16,56 @@
     scrollbar-width: thin;
     scrollbar-color: #6c757d transparent;
 }
+
+@keyframes slideOutToLeft {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-100%);
+    }
+}
+
+@keyframes slideOutToRight {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+@keyframes slideInFromLeft {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInFromRight {
+    0% {
+        transform: translateX(100%);
+    }
+    100% {
+        transform: translateX(0);
+    }
+}
+
+.slide-out-left {
+    animation: slideOutToLeft 0.25s ease-in-out forwards;
+}
+.slide-out-right {
+    animation: slideOutToRight 0.25s ease-in-out forwards;
+}
+.slide-in-left {
+    animation: slideInFromLeft 0.25s ease-in-out forwards;
+}
+.slide-in-right {
+    animation: slideInFromRight 0.25s ease-in-out forwards;
+}
+
 .nav-tabs .nav-link {
     color: #aaa;
     border-color: #444;

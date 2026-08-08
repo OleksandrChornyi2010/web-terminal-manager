@@ -25,21 +25,27 @@
                 id="terminals-tab"
             >
                 <div
-                    class="panel-header d-flex align-items-end border-bottom border-secondary bg-dark pt-2 px-2"
+                    class="panel-header d-flex align-items-center border-bottom border-secondary bg-dark pt-2 px-2"
                 >
                     <button
-                        class="btn btn-sm btn-outline-light mb-2 me-2"
+                        class="btn btn-sm btn-outline-light mb-2"
                         id="addTabButton"
                     >
                         <i class="bi bi-plus-lg"></i>
                     </button>
                     <ul
-                        class="nav nav-tabs flex-nowrap overflow-x-auto overflow-y-hidden w-100 border-0"
+                        class="nav nav-tabs flex-nowrap overflow-x-auto overflow-y-hidden w-100 border-0 align-self-end ms-2"
                         id="tabs-container"
                     ></ul>
+                    <button
+                        class="btn btn-sm btn-outline-light mb-2"
+                        id="btn-terminals-collapse"
+                    >
+                        <i class="bi bi-chevron-bar-left"></i>
+                    </button>
                 </div>
                 <div
-                    class="flex-grow-1 position-relative"
+                    class="flex-grow-1 position-relative overflow-hidden"
                     id="terminals-container"
                 ></div>
             </div>
@@ -51,6 +57,12 @@
                 <div
                     class="panel-header d-flex align-items-center p-2 border-bottom border-secondary gap-2"
                 >
+                    <button
+                        class="btn btn-sm btn-outline-light me-1"
+                        id="btn-filebrowser-collapse"
+                    >
+                        <i class="bi bi-chevron-bar-right"></i>
+                    </button>
                     <button class="btn btn-sm btn-outline-light" id="btn-back">
                         <i class="bi bi-chevron-left"></i>
                     </button>

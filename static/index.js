@@ -8,6 +8,9 @@ historyForward = []
 
 const terminalsTab = document.getElementById("terminals-tab")
 const filebrowserTab = document.getElementById("filebrowser-tab")
+const btnFilebrowserCollapse = document.getElementById(
+    "btn-filebrowser-collapse",
+)
 
 const btnBack = document.getElementById("btn-back")
 const btnForward = document.getElementById("btn-forward")
@@ -21,8 +24,8 @@ async function init() {
     const config = await configRes.json()
 
     if (config.filebrowser_only) {
-        terminalsTab.classList.remove("d-flex")
-        terminalsTab.classList.add("d-none")
+        toggleCollapsed(terminalsTab)
+        btnFilebrowserCollapse.disabled = true
     } else {
         await getTerminals()
     }
@@ -39,6 +42,12 @@ function assignEvents() {
     document
         .getElementById("folder-upload-input")
         .addEventListener("change", handleUpload)
+
+    document
+        .getElementById("btn-terminals-collapse")
+        .addEventListener("click", collapseTerminals)
+
+    btnFilebrowserCollapse.addEventListener("click", collapseFilebrowser)
 
     document.getElementById("addTabButton").addEventListener("click", addTab)
     document.getElementById("btn-back").addEventListener("click", goBack)
@@ -83,6 +92,50 @@ function showToast(msg) {
     document.getElementById("toast-message").innerText = msg
     const toast = new bootstrap.Toast(document.getElementById("status-toast"))
     toast.show()
+}
+
+function toggleCollapsed(tab) {
+    tab.classList.toggle("d-flex")
+    tab.classList.toggle("d-none")
+    resizeTerminal()
+}
+
+function isCollapsed(tab) {
+    return tab.classList.contains("d-none")
+}
+
+function animatePanel(tab, animationName, cb) {
+    tab.addEventListener(
+        "animationend",
+        () => {
+            if (cb) cb()
+            tab.classList.remove(animationName)
+        },
+        { once: true },
+    )
+    tab.classList.add(animationName)
+}
+
+function collapseTerminals() {
+    if (isCollapsed(filebrowserTab)) {
+        toggleCollapsed(filebrowserTab)
+        animatePanel(filebrowserTab, "slide-in-right")
+    } else if (!isCollapsed(terminalsTab)) {
+        animatePanel(terminalsTab, "slide-out-left", () => {
+            toggleCollapsed(terminalsTab)
+        })
+    }
+}
+
+function collapseFilebrowser() {
+    if (isCollapsed(terminalsTab)) {
+        toggleCollapsed(terminalsTab)
+        animatePanel(terminalsTab, "slide-in-left")
+    } else if (!isCollapsed(filebrowserTab)) {
+        animatePanel(filebrowserTab, "slide-out-right", () => {
+            toggleCollapsed(filebrowserTab)
+        })
+    }
 }
 
 async function addTab(existingId = null, existingName = null) {
@@ -613,6 +666,12 @@ async function handleUpload(e) {
 
     loadFiles()
     e.target.value = ""
+}
+
+function resizeTerminal() {
+    if (activeTabId && tabs[activeTabId]) {
+        setTimeout(() => tabs[activeTabId].fitAddon.fit(), 20)
+    }
 }
 
 init()
