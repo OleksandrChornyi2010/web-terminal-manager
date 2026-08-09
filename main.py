@@ -377,7 +377,8 @@ async def health_check():
 
 class HealthCheckFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
-        return record.getMessage().find("GET /health") == -1
+        msg = record.getMessage()
+        return "GET /health" not in msg and "HEAD /health" not in msg
 
 
 logging.getLogger("uvicorn.access").addFilter(HealthCheckFilter())
