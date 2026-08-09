@@ -12,6 +12,7 @@ import pty
 import termios
 import fcntl
 import signal
+import logging
 from pathlib import Path
 from dotenv import load_dotenv
 from typing import List, Optional
@@ -34,6 +35,9 @@ AUTH_PASSWORD = os.getenv("AUTH_PASSWORD")
 
 
 def verify_auth(request: Request = None, websocket: WebSocket = None):
+    if request and request.url.path == "/health":
+        return True
+
     if not AUTH_USERNAME or not AUTH_PASSWORD:
         return True
 
@@ -363,6 +367,20 @@ async def get_config():
     return {
         "filebrowser_only": FILEBROWSER_ONLY_MODE
     }
+
+
+@app.get("/health")
+async def health_check():
+    """Simple endpoint for health probes"""
+    return {"status": "ok"}
+
+
+class HealthCheckFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        return record.getMessage().find("GET /health") == -1
+
+
+logging.getLogger("uvicorn.access").addFilter(HealthCheckFilter())
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
