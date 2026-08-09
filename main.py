@@ -21,7 +21,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import uvicorn
 
-load_dotenv()
+load_dotenv(override=True)
 FILEBROWSER_ONLY_MODE = os.getenv("FILEBROWSER_ONLY_MODE", "false") == "true"
 ROOT_DIR = Path(os.getenv("ROOT_DIR", ".")).resolve()
 BASHRC_PATH = Path(os.getenv("BASHRC_PATH", "./.bashrc"))
