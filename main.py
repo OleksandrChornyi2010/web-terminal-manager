@@ -369,7 +369,7 @@ async def get_config():
     }
 
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 async def health_check():
     """Simple endpoint for health probes"""
     return {"status": "ok"}
@@ -377,8 +377,7 @@ async def health_check():
 
 class HealthCheckFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
-        msg = record.getMessage()
-        return "GET /health" not in msg and "HEAD /health" not in msg
+        return " /health HTTP" not in record.getMessage()
 
 
 logging.getLogger("uvicorn.access").addFilter(HealthCheckFilter())
