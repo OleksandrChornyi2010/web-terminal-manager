@@ -216,14 +216,9 @@ async function addTab(existingId = null, existingName = null) {
                 e.preventDefault()
                 const selection = term.getSelection()
                 if (selection) {
-                    navigator.clipboard
-                        .writeText(selection)
-                        .then(() => {
-                            showToast("Copied to clipboard")
-                        })
-                        .catch((err) => {
-                            console.error("Failed to copy text:", err)
-                        })
+                    navigator.clipboard.writeText(selection).catch((err) => {
+                        console.error("Failed to copy text:", err)
+                    })
                 }
             }
             return false // Tell xterm.js the event is handled

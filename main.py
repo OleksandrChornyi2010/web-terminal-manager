@@ -25,6 +25,10 @@ load_dotenv()
 FILEBROWSER_ONLY_MODE = os.getenv("FILEBROWSER_ONLY_MODE", "false") == "true"
 ROOT_DIR = Path(os.getenv("ROOT_DIR", ".")).resolve()
 BASHRC_PATH = Path(os.getenv("BASHRC_PATH", "./.bashrc"))
+
+# r"[\u@ \w]\$ " - no colors variant
+PS1 = os.getenv(
+    "PS1", r"\[\e[1;34m\][\u@ \[\e[1;38;5;42m\]\w\[\e[1;34m\]]\$ \[\e[0m\]")
 AUTH_USERNAME = os.getenv("AUTH_USERNAME")
 AUTH_PASSWORD = os.getenv("AUTH_PASSWORD")
 
@@ -68,8 +72,6 @@ def verify_auth(request: Request = None, websocket: WebSocket = None):
 
 
 app = FastAPI(dependencies=[Depends(verify_auth)])
-# r"[\u@ \w]\$ "
-PS1 = r"\[\e[1;34m\][\u@ \[\e[1;38;5;42m\]\w\[\e[1;34m\]]\$ \[\e[0m\]"
 
 tasks_state = {}
 terminals = {}
@@ -143,7 +145,7 @@ def create_terminal(name: str):
     term_id = str(uuid.uuid4())
     master, slave = pty.openpty()
     env = os.environ.copy()
-    env.setdefault("PS1", PS1)
+    env["PS1"] = PS1
     env["TERM"] = "xterm-256color"
     env["COLUMNS"] = "120"
     env["LINES"] = "30"
