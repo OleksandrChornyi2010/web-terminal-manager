@@ -24,6 +24,7 @@ import uvicorn
 load_dotenv()
 FILEBROWSER_ONLY_MODE = os.getenv("FILEBROWSER_ONLY_MODE", "false") == "true"
 ROOT_DIR = Path(os.getenv("ROOT_DIR", ".")).resolve()
+BASHRC_PATH = Path(os.getenv("BASHRC_PATH", "./.bashrc"))
 AUTH_USERNAME = os.getenv("AUTH_USERNAME")
 AUTH_PASSWORD = os.getenv("AUTH_PASSWORD")
 
@@ -67,7 +68,8 @@ def verify_auth(request: Request = None, websocket: WebSocket = None):
 
 
 app = FastAPI(dependencies=[Depends(verify_auth)])
-PS1 = r"[\u@ \W]\$ "
+# r"[\u@ \w]\$ "
+PS1 = r"\[\e[1;34m\][\u@ \[\e[1;38;5;42m\]\w\[\e[1;34m\]]\$ \[\e[0m\]"
 
 tasks_state = {}
 terminals = {}
@@ -150,7 +152,7 @@ def create_terminal(name: str):
     fcntl.fcntl(master, fcntl.F_SETFL, flags | os.O_NONBLOCK)
 
     proc = subprocess.Popen(
-        ["bash", "--norc", "-i"],
+        ["bash", "--rcfile", BASHRC_PATH.resolve(), "-i"],
         stdin=slave, stdout=slave, stderr=slave,
         env=env, preexec_fn=os.setsid
     )
