@@ -23,7 +23,7 @@ import uvicorn
 
 load_dotenv()
 FILEBROWSER_ONLY_MODE = os.getenv("FILEBROWSER_ONLY_MODE", "false") == "true"
-ROOT_DIR = Path(os.getenv("ROOT_DIR")).resolve()
+ROOT_DIR = Path(os.getenv("ROOT_DIR", ".")).resolve()
 AUTH_USERNAME = os.getenv("AUTH_USERNAME")
 AUTH_PASSWORD = os.getenv("AUTH_PASSWORD")
 
