@@ -92,6 +92,11 @@ class RenameTerminalModel(BaseModel):
 
 class CreateModel(BaseModel):
     name: str
+    is_dir: bool
+
+
+class CreateTerminalModel(BaseModel):
+    name: str
 
 
 class TerminalSession:
@@ -214,7 +219,12 @@ async def list_files(path: str = ""):
 @app.post("/api/files")
 async def create_file(path: str, data: CreateModel):
     target = secure_path(path) / data.name
-    target.touch(exist_ok=True)
+    if data.is_dir:
+        target.mkdir(exist_ok=True)
+
+    else:
+        target.touch(exist_ok=True)
+
     return {"status": "ok"}
 
 
@@ -336,7 +346,7 @@ async def terminal_socket(websocket: WebSocket, term_id: str):
 
 
 @app.post("/api/terminals")
-async def api_create_terminal(data: CreateModel):
+async def api_create_terminal(data: CreateTerminalModel):
     term_id = create_terminal(data.name)
     return {"id": term_id, "name": data.name}
 

@@ -66,6 +66,12 @@
     animation: slideInFromRight 0.25s ease-in-out forwards;
 }
 
+.btn-sm:active,
+.btn-sm:focus {
+    color: var(--bs-btn-color) !important;
+    border-color: var(--bs-btn-border-color) !important;
+    background-color: var(--bs-btn-bg) !important;
+}
 .nav-tabs .nav-link {
     color: #aaa;
     border-color: #444;

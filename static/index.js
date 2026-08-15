@@ -34,8 +34,11 @@ async function init() {
 
 function assignEvents() {
     document
-        .getElementById("create-file-btn")
-        .addEventListener("click", createFilePrompt)
+        .getElementById("create-file-item")
+        .addEventListener("click", () => createFileOrFolderPrompt(false))
+    document
+        .getElementById("create-folder-item")
+        .addEventListener("click", () => createFileOrFolderPrompt(true))
     document
         .getElementById("file-upload-input")
         .addEventListener("change", handleUpload)
@@ -483,11 +486,17 @@ function goForward() {
     loadFiles()
 }
 
-function createFilePrompt() {
+function createFileOrFolderPrompt(isDir = false) {
+    const item = isDir == true ? "folder" : "file"
+    const iconClass =
+        isDir === true
+            ? "bi-folder-fill text-warning"
+            : "bi-file-earmark-text text-light"
+
     const list = document.getElementById("file-list")
     const li = document.createElement("li")
     li.className = "list-group-item file-item d-flex align-items-center gap-2"
-    li.innerHTML = `<i class="bi bi-file-earmark-text text-light"></i><input type="text" class="file-name-input flex-grow-1" placeholder="New file name">`
+    li.innerHTML = `<i class="bi ${iconClass}"></i><input type="text" class="file-name-input flex-grow-1" placeholder="New ${item} name">`
     list.prepend(li)
 
     const input = li.querySelector("input")
@@ -506,15 +515,18 @@ function createFilePrompt() {
                     {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ name: input.value.trim() }),
+                        body: JSON.stringify({
+                            name: input.value.trim(),
+                            is_dir: isDir,
+                        }),
                     },
                 )
                 if (!res.ok) {
                     throw new Error(`Server returned status: ${res.status}`)
                 }
             } catch (err) {
-                console.error("Failed to create file on server:", err)
-                showToast("Error creating file terminal")
+                console.error(`Failed to create ${item} on server:`, err)
+                showToast(`Error creating ${item}`)
             }
         }
         loadFiles()
