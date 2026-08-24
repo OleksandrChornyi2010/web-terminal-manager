@@ -93,8 +93,10 @@ async function getTerminals() {
 
 function showToast(msg) {
     document.getElementById("toast-message").innerText = msg
-    const toast = new bootstrap.Toast(document.getElementById("status-toast"))
-    toast.show()
+    const toast = bootstrap.Toast.getOrCreateInstance(
+        document.getElementById("status-toast"),
+    )
+    if (!toast.isShown()) toast.show()
 }
 
 function toggleCollapsed(tab) {
@@ -427,7 +429,7 @@ async function loadFiles() {
 
             if (f.is_dir) {
                 const nameSpan = li.querySelector(".file-name-span")
-                nameSpan.style.cursor = "pointer"
+                nameSpan.classList.add("folder-link")
                 nameSpan.addEventListener("click", () => navigate(f.name))
             }
 
@@ -650,27 +652,44 @@ async function handleUpload(e) {
     const files = e.target.files
     if (files.length === 0) return
 
-    const formData = new FormData()
-    formData.append("path", currentPath)
-    for (let i = 0; i < files.length; i++) {
-        formData.append("files", files[i])
-    }
+    let uploadedCount = 0
+    const batchSize = 10
 
-    showToast("Uploading...")
-    try {
-        const res = await fetch("/api/upload", {
-            method: "POST",
-            body: formData,
+    showToast(
+        `Uploading... ${uploadedCount} / ${files.length} files processed.`,
+    )
+
+    const filesArray = Array.from(files)
+    for (let i = 0; i < filesArray.length; i += batchSize) {
+        const batch = filesArray.slice(i, i + batchSize)
+        const formData = new FormData()
+        formData.append("path", currentPath)
+
+        batch.forEach((file) => {
+            formData.append("files", file)
+            const relPath = file.webkitRelativePath || file.name
+            formData.append("paths", relPath)
         })
-        if (!res.ok) {
-            throw new Error(`Server returned status: ${res.status}`)
+        try {
+            const res = await fetch("/api/upload", {
+                method: "POST",
+                body: formData,
+            })
+            if (!res.ok) {
+                throw new Error(`Server returned status: ${res.status}`)
+            }
+            uploadedCount += batch.length
+            showToast(
+                `Uploading... ${uploadedCount} / ${files.length} files processed.`,
+            )
+        } catch (err) {
+            console.error("Failed to upload files:", err)
+            showToast("Error uploading files")
+            break
         }
-        showToast("Upload complete")
-    } catch (err) {
-        console.error("Failed to upload files:", err)
-        showToast("Error uploading files")
     }
 
+    showToast("Upload complete")
     loadFiles()
     e.target.value = ""
 }

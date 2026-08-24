@@ -19,6 +19,7 @@ from typing import List, Optional
 from fastapi import FastAPI, WebSocket, UploadFile, File, BackgroundTasks, Form, HTTPException, WebSocketDisconnect, Depends, status, Request
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.background import BackgroundTask
 from pydantic import BaseModel
 import uvicorn
 
@@ -251,10 +252,18 @@ async def delete_file(path: str, name: str):
 
 
 @app.post("/api/upload")
-async def upload_files(path: str = Form(...), files: List[UploadFile] = File(...)):
+async def upload_files(path: str = Form(...), files: List[UploadFile] = File(...), paths: List[str] = Form(...)):
     target_dir = secure_path(path)
-    for file in files:
-        file_path = target_dir / file.filename
+
+    if len(files) != len(paths):
+        raise HTTPException(status_code=400, detail="Files and paths mismatch")
+
+    for file, relative_path in zip(files, paths):
+        clean_path = Path(relative_path).parts
+        safe_rel_path = Path(
+            *[p for p in clean_path if p not in ('.', '..', '/', '\\')])
+
+        file_path = target_dir / safe_rel_path
         file_path.parent.mkdir(parents=True, exist_ok=True)
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
@@ -294,11 +303,26 @@ async def get_progress(task_id: str):
     return tasks_state.get(task_id, {"status": "not_found"})
 
 
+def cleanup_download_task(file_path: str, task_id: str):
+    try:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+    except Exception as e:
+        logging.error(f"Failed to delete temp file {file_path}: {e}")
+
+    tasks_state.pop(task_id, None)
+
+
 @app.get("/api/download/file")
 async def download_file(path: str, name: str, task_id: Optional[str] = None):
     if task_id:
+        if task_id not in tasks_state:
+            raise HTTPException(
+                status_code=404, detail="Task not found or already downloaded")
+
         file_path = tasks_state[task_id]["file"]
-        return FileResponse(file_path, filename=f"{name}.zip")
+
+        return FileResponse(file_path, filename=f"{name}.zip", background=BackgroundTask(cleanup_download_task, file_path, task_id))
     target = secure_path(path) / name
     if not target.exists():
         return HTTPException(status_code=404, detail="File not found")
