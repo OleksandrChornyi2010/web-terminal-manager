@@ -17,6 +17,7 @@ const btnForward = document.getElementById("btn-forward")
 const currentPathText = document.getElementById("current-path-display")
 const fileInput = document.getElementById("file-upload-input")
 const folderInput = document.getElementById("folder-upload-input")
+const btnRefresh = document.getElementById("btn-refresh")
 
 async function init() {
     assignEvents()
@@ -61,6 +62,8 @@ function assignEvents() {
     document
         .getElementById("folder-upload-item")
         .addEventListener("click", () => folderInput.click())
+
+    btnRefresh.addEventListener("click", loadFiles)
 
     const dropZone = document.getElementById("drop-zone")
     let dragCounter = 0
@@ -428,6 +431,8 @@ function editTabName(id) {
 
 async function loadFiles() {
     try {
+        btnRefresh.innerHTML = `<i class="bi bi-x"></i>`
+        btnRefresh.disabled = true
         const res = await fetch(
             `/api/files?path=${encodeURIComponent(currentPath)}`,
         )
@@ -494,6 +499,8 @@ async function loadFiles() {
         currentPathText.innerText = currentPath
         btnBack.disabled = historyBack.length === 0
         btnForward.disabled = historyForward.length === 0
+        btnRefresh.innerHTML = `<i class="bi bi-arrow-clockwise"></i>`
+        btnRefresh.disabled = false
     } catch (err) {
         console.error("Failed to load files from server:", err)
         showToast("Error loading files")

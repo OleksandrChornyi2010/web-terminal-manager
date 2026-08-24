@@ -66,11 +66,22 @@
     animation: slideInFromRight 0.25s ease-in-out forwards;
 }
 
-.btn-sm:active,
-.btn-sm:focus {
-    color: var(--bs-btn-color) !important;
-    border-color: var(--bs-btn-border-color) !important;
-    background-color: var(--bs-btn-bg) !important;
+@media (hover: none) {
+    .btn-outline-light:hover,
+    .btn-outline-light:focus {
+        background-color: transparent !important;
+        color: #f8f9fa !important;
+    }
+
+    .btn-outline-light:active {
+        background-color: #f8f9fa !important;
+        color: #000 !important;
+    }
+}
+.btn-sm:focus,
+.btn-sm:active:focus {
+    box-shadow: none !important;
+    outline: none !important;
 }
 .nav-tabs .nav-link {
     color: #aaa;
