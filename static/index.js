@@ -61,6 +61,40 @@ function assignEvents() {
     document
         .getElementById("folder-upload-item")
         .addEventListener("click", () => folderInput.click())
+
+    const dropZone = document.getElementById("drop-zone")
+    let dragCounter = 0
+
+    ;["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
+        dropZone.addEventListener(
+            eventName,
+            (e) => {
+                e.preventDefault()
+                e.stopPropagation()
+            },
+            false,
+        )
+    })
+
+    dropZone.addEventListener("dragenter", (e) => {
+        dragCounter++
+        if (dragCounter === 1) {
+            dropZone.classList.add("drag-over")
+        }
+    })
+
+    dropZone.addEventListener("dragleave", (e) => {
+        dragCounter--
+        if (dragCounter === 0) {
+            dropZone.classList.remove("drag-over")
+        }
+    })
+
+    dropZone.addEventListener("drop", (e) => {
+        dragCounter = 0
+        dropZone.classList.remove("drag-over")
+        handleDrop(e)
+    })
 }
 
 async function getTerminals() {
@@ -648,50 +682,107 @@ async function downloadItem(name, isDir) {
     }
 }
 
-async function handleUpload(e) {
-    const files = e.target.files
-    if (files.length === 0) return
+async function processUploadBatch(fileItems) {
+    if (fileItems.length === 0) return
 
+    showToast(`Uploading... 0 / ${fileItems.length} files processed.`)
     let uploadedCount = 0
     const batchSize = 10
 
-    showToast(
-        `Uploading... ${uploadedCount} / ${files.length} files processed.`,
-    )
-
-    const filesArray = Array.from(files)
-    for (let i = 0; i < filesArray.length; i += batchSize) {
-        const batch = filesArray.slice(i, i + batchSize)
+    for (let i = 0; i < fileItems.length; i += batchSize) {
+        const batch = fileItems.slice(i, i + batchSize)
         const formData = new FormData()
         formData.append("path", currentPath)
 
-        batch.forEach((file) => {
-            formData.append("files", file)
-            const relPath = file.webkitRelativePath || file.name
-            formData.append("paths", relPath)
+        batch.forEach((item) => {
+            formData.append("files", item.file)
+            formData.append("paths", item.relativePath)
         })
+
         try {
             const res = await fetch("/api/upload", {
                 method: "POST",
                 body: formData,
             })
-            if (!res.ok) {
-                throw new Error(`Server returned status: ${res.status}`)
-            }
+            if (!res.ok) throw new Error(`Status: ${res.status}`)
+
             uploadedCount += batch.length
             showToast(
-                `Uploading... ${uploadedCount} / ${files.length} files processed.`,
+                `Uploading... ${uploadedCount} / ${fileItems.length} files processed.`,
             )
         } catch (err) {
-            console.error("Failed to upload files:", err)
-            showToast("Error uploading files")
+            console.error("Upload failed for batch:", err)
+            showToast("Error uploading some files")
             break
         }
     }
 
     showToast("Upload complete")
     loadFiles()
+}
+
+async function handleUpload(e) {
+    const files = e.target.files
+    if (files.length === 0) return
+
+    const fileItems = Array.from(files).map((file) => ({
+        file: file,
+        relativePath: file.webkitRelativePath || file.name,
+    }))
+
+    await processUploadBatch(fileItems)
     e.target.value = ""
+}
+
+async function handleDrop(e) {
+    const items = e.dataTransfer.items
+    if (!items) return
+
+    showToast("Reading file structure...")
+    const filesToUpload = []
+
+    async function processEntry(entry, path) {
+        if (entry.isFile) {
+            const file = await new Promise((resolve) => entry.file(resolve))
+            filesToUpload.push({ file: file, relativePath: path + file.name })
+        } else if (entry.isDirectory) {
+            const dirReader = entry.createReader()
+
+            const readAllEntries = async () => {
+                let allEntries = []
+                let readEntries = async () => {
+                    const entries = await new Promise((resolve) =>
+                        dirReader.readEntries(resolve),
+                    )
+                    if (entries.length > 0) {
+                        allEntries = allEntries.concat(entries)
+                        await readEntries()
+                    }
+                }
+                await readEntries()
+                return allEntries
+            }
+
+            const entries = await readAllEntries()
+            for (const childEntry of entries) {
+                await processEntry(childEntry, path + entry.name + "/")
+            }
+        }
+    }
+
+    const promises = []
+    for (let i = 0; i < items.length; i++) {
+        const item = items[i]
+        if (item.kind === "file") {
+            const entry = item.webkitGetAsEntry()
+            if (entry) {
+                promises.push(processEntry(entry, ""))
+            }
+        }
+    }
+
+    await Promise.all(promises)
+    await processUploadBatch(filesToUpload)
 }
 
 function resizeTerminal() {
