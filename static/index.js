@@ -210,7 +210,7 @@ async function addTab(existingId = null, existingName = null) {
     tabEl.className = "nav-item"
     tabEl.innerHTML = `
         <button type="button" class="nav-link user-select-none" id="${id}-link">
-            <span class="text-nowrap tab-name" id="${id}-name">${name}</span>
+            <span class="text-nowrap" id="${id}-name">${name}</span>
             <i class="bi bi-pencil ms-1 tab-edit-btn" style="font-size: 0.7rem; cursor: pointer;"></i>
             <i class="bi bi-x-lg ms-2 text-danger tab-close-btn" style="font-size: 0.8rem; cursor: pointer;"></i>
         </button>
@@ -373,6 +373,10 @@ function editTabName(id) {
     input.id = `${id}-input`
     input.value = currentName
 
+    input.addEventListener("click", (e) => {
+        e.stopPropagation()
+    })
+
     span.replaceWith(input)
 
     input.focus()
@@ -407,7 +411,7 @@ function editTabName(id) {
         }
 
         const newSpan = document.createElement("span")
-        newSpan.className = "text-nowrap tab-name"
+        newSpan.className = "text-nowrap"
         newSpan.id = `${id}-name`
         newSpan.innerText = finalName
 
