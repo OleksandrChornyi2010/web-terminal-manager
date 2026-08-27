@@ -18,6 +18,7 @@ const currentPathText = document.getElementById("current-path-display")
 const fileInput = document.getElementById("file-upload-input")
 const folderInput = document.getElementById("folder-upload-input")
 const btnRefresh = document.getElementById("btn-refresh")
+const statusToast = document.getElementById("status-toast")
 
 async function init() {
     assignEvents()
@@ -123,17 +124,20 @@ async function getTerminals() {
         }
     } catch (err) {
         console.error("Failed to load active terminals:", err)
-        showToast("Error connecting to server")
+        showToast("Error loading active terminals")
         await addTab()
     }
 }
 
-function showToast(msg) {
+function showToast(msg, autoHide = true) {
     document.getElementById("toast-message").innerText = msg
-    const toast = bootstrap.Toast.getOrCreateInstance(
-        document.getElementById("status-toast"),
-    )
-    if (!toast.isShown()) toast.show()
+
+    if (!bootstrap.Toast.getInstance(statusToast)?.isShown()) {
+        const toast = new bootstrap.Toast(statusToast, {
+            autohide: autoHide,
+        })
+        toast.show()
+    }
 }
 
 function toggleCollapsed(tab) {
@@ -655,7 +659,7 @@ async function downloadItem(name, isDir) {
         return
     }
 
-    showToast(`Zipping ${name}: 0%`)
+    showToast(`Zipping ${name}: 0%`, false)
 
     try {
         const res = await fetch(
@@ -674,7 +678,7 @@ async function downloadItem(name, isDir) {
                     throw new Error(`Server returned status: ${stRes.status}`)
                 }
                 const state = await stRes.json()
-                showToast(`Zipping ${name}: ${state.progress}%`)
+                showToast(`Zipping ${name}: ${state.progress}%`, false)
 
                 if (state.status === "done") {
                     clearInterval(poll)
@@ -696,7 +700,7 @@ async function downloadItem(name, isDir) {
 async function processUploadBatch(fileItems) {
     if (fileItems.length === 0) return
 
-    showToast(`Uploading... 0 / ${fileItems.length} files processed.`)
+    showToast(`Uploading... 0 / ${fileItems.length} files processed.`, false)
     let uploadedCount = 0
     const batchSize = 10
 
@@ -720,6 +724,7 @@ async function processUploadBatch(fileItems) {
             uploadedCount += batch.length
             showToast(
                 `Uploading... ${uploadedCount} / ${fileItems.length} files processed.`,
+                false,
             )
         } catch (err) {
             console.error("Upload failed for batch:", err)
@@ -749,7 +754,7 @@ async function handleDrop(e) {
     const items = e.dataTransfer.items
     if (!items) return
 
-    showToast("Reading file structure...")
+    showToast("Reading file structure...", false)
     const filesToUpload = []
 
     async function processEntry(entry, path) {
